@@ -1,6 +1,5 @@
 package com.own.moviebooking2.entity;
 
-import com.own.moviebooking2.enums.SeatStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
