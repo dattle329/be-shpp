@@ -15,11 +15,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -31,19 +33,28 @@ public class WebSecurityConfig {
     @Autowired
     DelegatedAuthenticationEntryPoint authEntryPoint;
 
+    @Autowired
+    private LogoutHandler logoutHandler;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/user/login").permitAll()
-                        .requestMatchers("/user").hasAnyAuthority("ADMIN_ROLE", "USER_ROLE")
+                        .requestMatchers(HttpMethod.POST, "/user/refresh-token").permitAll()
+                        .requestMatchers("/user").hasAnyAuthority("ADMIN_ROLE", "USER_ROLE", "HR_ROLE")
                         .requestMatchers("/admin/**").hasAuthority("ADMIN_ROLE")
+                        .requestMatchers("/hr/**").hasAnyAuthority("ADMIN_ROLE", "HR_ROLE")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling((exception)->
                         exception.authenticationEntryPoint(authEntryPoint))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout(logout ->
+                        logout.logoutUrl("/logout")
+                                .addLogoutHandler(logoutHandler)
+                                .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext()))
                 .build();
     }
 

@@ -4,5 +4,5 @@ import lombok.Getter;
 
 @Getter
 public enum Role {
-    USER_ROLE, ADMIN_ROLE;
+    USER_ROLE,HR_ROLE, ADMIN_ROLE;
 }

@@ -71,6 +71,19 @@ public class JwtService {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
+    public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
+        try {
+            // Kiểm tra token chưa hết hạn
+            final String username = extractUsername(token);
+
+            // Kiểm tra xem username trong token có khớp với username của userDetails không
+            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        } catch (Exception e) {
+            // Token không hợp lệ (ví dụ: không đúng định dạng hoặc đã bị chỉnh sửa)
+            return false;
+        }
+    }
+
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
@@ -93,4 +106,3 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
-
