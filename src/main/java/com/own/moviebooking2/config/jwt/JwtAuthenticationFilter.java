@@ -34,76 +34,76 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
-//    @Override
-//    protected void doFilterInternal(
-//            @NonNull HttpServletRequest request,
-//            @NonNull HttpServletResponse response,
-//            @NonNull FilterChain filterChain
-//    ) throws ServletException, IOException {
-//        final String authHeader = request.getHeader("Authorization");
-//
-//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-//
-//        final String jwt = authHeader.substring(7);
-//        final String username;
-//
-//            // Extract username from JWT
-//        username = jwtService.extractUsername(jwt);
-//
-//            // Proceed with authentication only if userEmail is not null
-//            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-//                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-//
-//                if (jwtService.isTokenValid(jwt, userDetails)) {
-//                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-//                            userDetails,
-//                            null,
-//                            userDetails.getAuthorities()
-//                    );
-//
-//                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-//                    SecurityContextHolder.getContext().setAuthentication(authToken);
-//                }
-//            }
-//
-//        filterChain.doFilter(request, response);
-//    }
-
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        final String authHeader = request.getHeader("Authorization");
 
-        String token = null;
-        String username;
-
-        if(request.getCookies() != null){
-            for(Cookie cookie: request.getCookies()){
-                if(cookie.getName().equals("accessToken")){
-                    token = cookie.getValue();
-                }
-            }
-        }
-
-        if(token == null){
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        username = jwtService.extractUsername(token);
+        final String jwt = authHeader.substring(7);
+        final String username;
 
-        if(username != null){
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if(jwtService.isTokenValid(token, userDetails)){
-                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            // Extract username from JWT
+        username = jwtService.extractUsername(jwt);
+
+            // Proceed with authentication only if userEmail is not null
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
-
-        }
 
         filterChain.doFilter(request, response);
     }
+
+//    @Override
+//    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+//
+//        String token = null;
+//        String username;
+//
+//        if(request.getCookies() != null){
+//            for(Cookie cookie: request.getCookies()){
+//                if(cookie.getName().equals("accessToken")){
+//                    token = cookie.getValue();
+//                }
+//            }
+//        }
+//
+//        if(token == null){
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+//
+//        username = jwtService.extractUsername(token);
+//
+//        if(username != null){
+//            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+//            if(jwtService.isTokenValid(token, userDetails)){
+//                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+//                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+//                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+//            }
+//
+//        }
+//
+//        filterChain.doFilter(request, response);
+//    }
 }
 
