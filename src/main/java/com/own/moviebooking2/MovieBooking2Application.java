@@ -11,9 +11,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 @AllArgsConstructor
@@ -36,46 +35,22 @@ public class MovieBooking2Application implements CommandLineRunner {
             return;
         }
 
-        Optional<UserRole> userRole = userRoleRepository.findByRole(Role.USER_ROLE);
-        Optional<UserRole> hrRole = userRoleRepository.findByRole(Role.HR_ROLE);
-        Optional<UserRole> adminRole = userRoleRepository.findByRole(Role.ADMIN_ROLE);
+        Map<Role, UserRole> roles = Arrays.stream(Role.values())
+                .collect(Collectors.toMap(
+                        role -> role,
+                        role -> userRoleRepository.findByRole(role).orElseGet(() -> userRoleRepository.save(new UserRole(role)))
+                ));
 
-        if (!userRole.isPresent() && !hrRole.isPresent() && !adminRole.isPresent()) {
-            userRoleRepository.save(new UserRole(Role.USER_ROLE));
-            userRoleRepository.save(new UserRole(Role.HR_ROLE));
-            userRoleRepository.save(new UserRole(Role.ADMIN_ROLE));
-        }
+        Set<UserRole> userRoleSet = Set.of(roles.get(Role.USER_ROLE));
+        Set<UserRole> hrRoleSet = Set.of(roles.get(Role.USER_ROLE), roles.get(Role.HR_ROLE));
+        Set<UserRole> adminRoleSet = Set.of(roles.get(Role.USER_ROLE), roles.get(Role.HR_ROLE), roles.get(Role.ADMIN_ROLE));
 
-        Set<UserRole> userRoleSet = new HashSet<>();
-        Set<UserRole> hrRoleSet = new HashSet<>();
-        Set<UserRole> adminRoleSet = new HashSet<>();
+        List<User> users = List.of(
+                new User("dattle99", passwordEncoder.encode("Ledat999@"), userRoleSet),
+                new User("lanle99", passwordEncoder.encode("Ledat999@"), hrRoleSet),
+                new User("dattle329", passwordEncoder.encode("Ledat999@"), adminRoleSet)
+        );
 
-        userRoleSet.add(userRole.get());
-
-        hrRoleSet.add(userRole.get());
-        hrRoleSet.add(hrRole.get());
-
-        adminRoleSet.add(hrRole.get());
-        adminRoleSet.add(userRole.get());
-        adminRoleSet.add(adminRole.get());
-
-        User user = new User();
-        user.setUsername("dattle99");
-        user.setPassword(passwordEncoder.encode("Ledat999@"));
-        user.setRoles(userRoleSet);
-
-        User hr = new User();
-        hr.setUsername("lanle99");
-        hr.setPassword(passwordEncoder.encode("Ledat999@"));
-        hr.setRoles(hrRoleSet);
-
-        User admin = new User();
-        admin.setUsername("dattle329");
-        admin.setPassword(passwordEncoder.encode("Ledat999@"));
-        admin.setRoles(adminRoleSet);
-
-        userRepository.save(user);
-        userRepository.save(admin);
-        userRepository.save(hr);
+        userRepository.saveAll(users);
     }
 }

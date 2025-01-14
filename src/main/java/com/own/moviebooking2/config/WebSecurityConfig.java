@@ -3,7 +3,6 @@ package com.own.moviebooking2.config;
 import com.own.moviebooking2.config.jwt.JwtAuthenticationFilter;
 import com.own.moviebooking2.exception.DelegatedAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,6 +21,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.web.cors.CorsConfiguration;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -38,9 +40,12 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity.csrf(AbstractHttpConfigurer::disable)
+        return httpSecurity
+                .cors(cors -> cors.configurationSource(request -> corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/user/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/user/signup").permitAll()
                         .requestMatchers(HttpMethod.GET, "/test").permitAll()
                         .requestMatchers(HttpMethod.POST, "/user/refresh-token").permitAll()
                         .requestMatchers("/user").hasAnyAuthority("ADMIN_ROLE", "USER_ROLE", "HR_ROLE")
@@ -75,5 +80,14 @@ public class WebSecurityConfig {
         provider.setPasswordEncoder(passwordEncoder());
         provider.setUserDetailsService(userDetailsService);
         return new ProviderManager(provider);
+    }
+
+    @Bean
+    CorsConfiguration corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000/"));
+        configuration.setAllowedMethods(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        return configuration;
     }
 }

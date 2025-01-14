@@ -2,6 +2,7 @@ package com.own.moviebooking2.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -12,6 +13,7 @@ import java.util.Set;
 @Table(name = "User")
 @Getter
 @Setter
+@NoArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,4 +30,9 @@ public class User {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<UserRole> roles;
 
+    public User(String username, String password, Set<UserRole> userRoleSet) {
+        this.username = username;
+        this.password = password;
+        this.roles = userRoleSet;
+    }
 }
