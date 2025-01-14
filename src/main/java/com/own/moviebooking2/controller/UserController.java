@@ -51,4 +51,9 @@ public class UserController {
     public String getUserFromToken(HttpServletRequest request){
         return userService.getUserFromToken(request);
     }
+
+    @GetMapping("/test")
+    public String test(){
+        return "test";
+    }
 }

@@ -41,6 +41,7 @@ public class WebSecurityConfig {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/user/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/test").permitAll()
                         .requestMatchers(HttpMethod.POST, "/user/refresh-token").permitAll()
                         .requestMatchers("/user").hasAnyAuthority("ADMIN_ROLE", "USER_ROLE", "HR_ROLE")
                         .requestMatchers("/admin/**").hasAuthority("ADMIN_ROLE")
