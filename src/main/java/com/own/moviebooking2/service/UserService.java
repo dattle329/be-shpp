@@ -133,7 +133,7 @@ public class UserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Optional<User> user = userRepository.findByUsername(username);
-        if (user == null) {
+        if (user.isEmpty()) {
             throw new UsernameNotFoundException(username);
         }
         return new MyUserPrincipal(user.get());
@@ -141,7 +141,6 @@ public class UserService implements UserDetailsService {
 
     public String getUserFromToken(HttpServletRequest request) {
         String token = null;
-
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if (cookie.getName().equals("accessToken")) {
