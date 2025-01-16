@@ -2,6 +2,7 @@ package com.own.moviebooking2.config;
 
 import com.own.moviebooking2.config.jwt.JwtAuthenticationFilter;
 import com.own.moviebooking2.exception.DelegatedAuthenticationEntryPoint;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -57,9 +57,13 @@ public class WebSecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout(logout ->
-                        logout.logoutUrl("/logout")
+                        logout.logoutUrl("/auth/logout")
                                 .addLogoutHandler(logoutHandler)
-                                .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext()))
+                                .logoutSuccessHandler((request, response, authentication) -> {
+                                            response.getWriter().write("Logout successful");
+                                            response.setStatus(HttpServletResponse.SC_OK);
+                                        }
+                                ))
                 .build();
     }
 

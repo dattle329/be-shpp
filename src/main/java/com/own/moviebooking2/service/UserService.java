@@ -67,7 +67,7 @@ public class UserService implements UserDetailsService {
         return "User registered successfully";
     }
 
-    public UserLoginResponse login(UserLoginRequest loginRequest, HttpServletResponse response) {
+    public UserLoginResponse login(UserLoginRequest loginRequest) {
         try {Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsername(),
@@ -83,14 +83,6 @@ public class UserService implements UserDetailsService {
             MyUserPrincipal userDetails = (MyUserPrincipal) authentication.getPrincipal();
             List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
                     .collect(Collectors.toList());
-
-            ResponseCookie cookie = ResponseCookie.from("accessToken", accessToken)
-                    .httpOnly(true)
-                    .secure(false)
-                    .path("/")
-                    .maxAge(jwtService.getExpirationTime())
-                    .build();
-            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
             return getUserLoginResponse(loginRequest, accessToken, refreshToken, roles);
         } catch (Exception e) {

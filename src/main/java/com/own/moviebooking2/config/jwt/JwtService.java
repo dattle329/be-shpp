@@ -73,13 +73,10 @@ public class JwtService {
 
     public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
         try {
-            // Kiểm tra token chưa hết hạn
             final String username = extractUsername(token);
 
-            // Kiểm tra xem username trong token có khớp với username của userDetails không
             return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
         } catch (Exception e) {
-            // Token không hợp lệ (ví dụ: không đúng định dạng hoặc đã bị chỉnh sửa)
             return false;
         }
     }

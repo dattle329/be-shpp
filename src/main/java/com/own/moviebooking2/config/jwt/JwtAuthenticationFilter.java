@@ -1,5 +1,6 @@
 package com.own.moviebooking2.config.jwt;
 
+import com.own.moviebooking2.service.BlackListTokenService;
 import io.micrometer.common.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,15 +24,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final BlackListTokenService blacklistTokenService;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
             UserDetailsService userDetailsService,
-            HandlerExceptionResolver handlerExceptionResolver
+            HandlerExceptionResolver handlerExceptionResolver, BlackListTokenService blacklistTokenService
     ) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.handlerExceptionResolver = handlerExceptionResolver;
+        this.blacklistTokenService = blacklistTokenService;
     }
 
     @Override
@@ -52,6 +55,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // Extract username from JWT
         username = jwtService.extractUsername(jwt);
+
+        if (blacklistTokenService.isBlackListed(jwt)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token is blacklisted");
+            return;
+        }
 
             // Proceed with authentication only if userEmail is not null
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

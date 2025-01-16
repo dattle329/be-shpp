@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LogoutService implements LogoutHandler {
 
+    private final BlackListTokenService blackListTokenService;
 
     @Override
     public void logout(
@@ -19,7 +20,12 @@ public class LogoutService implements LogoutHandler {
             HttpServletResponse response,
             Authentication authentication
     ) {
-
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            blackListTokenService.addToBlackList(token);
+        }
+        response.setStatus(HttpServletResponse.SC_OK);
         SecurityContextHolder.clearContext();
     }
 }

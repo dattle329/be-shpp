@@ -23,8 +23,8 @@ public class UserController {
     }
 
     @PostMapping(value = "/user/login")
-    public UserLoginResponse login(@RequestBody UserLoginRequest loginRequest, HttpServletResponse response) {
-        return userService.login(loginRequest, response);
+    public UserLoginResponse login(@RequestBody UserLoginRequest loginRequest) {
+        return userService.login(loginRequest);
     }
 
     //    @PreAuthorize("hasRole('ADMIN_ROLE')")
