@@ -1,6 +1,7 @@
 package com.own.moviebooking2.service;
 
 import com.own.moviebooking2.config.jwt.JwtService;
+import com.own.moviebooking2.dto.request.UpdateUserPasswordRequest;
 import com.own.moviebooking2.dto.request.UserLoginRequest;
 import com.own.moviebooking2.dto.response.CreateTokenAgainResponse;
 import com.own.moviebooking2.dto.response.UserLoginResponse;
@@ -10,12 +11,10 @@ import com.own.moviebooking2.enums.Role;
 import com.own.moviebooking2.exception.CommonException;
 import com.own.moviebooking2.repository.UserRepository;
 import com.own.moviebooking2.repository.UserRoleRepository;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -52,10 +51,13 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public String signUp(UserLoginRequest userLoginRequest) {
-        userRepository.findByUsername(userLoginRequest.getUsername()).ifPresent(user -> {
+    /**
+     * sign up user function
+     */
+    public String registerUser(UserLoginRequest userLoginRequest) {
+        if (userRepository.existsByUsername(userLoginRequest.getUsername())) {
             throw new CommonException("user already exists");
-        });
+        }
         User user = new User();
         user.setUsername(userLoginRequest.getUsername());
         user.setPassword(passwordEncoder.encode(userLoginRequest.getPassword()));
@@ -67,8 +69,12 @@ public class UserService implements UserDetailsService {
         return "User registered successfully";
     }
 
+    /**
+     * login user function
+     */
     public UserLoginResponse login(UserLoginRequest loginRequest) {
-        try {Authentication authentication = authenticationManager.authenticate(
+        try {
+            Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsername(),
                             loginRequest.getPassword()
@@ -86,8 +92,50 @@ public class UserService implements UserDetailsService {
 
             return getUserLoginResponse(loginRequest, accessToken, refreshToken, roles);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new CommonException("Invalid username or password");
+        }
+    }
+
+    private UserLoginResponse getUserLoginResponse(UserLoginRequest loginRequest, String jwtToken, String refreshToken, List<String> roles) {
+        long expiredTime = jwtService.getExpirationTime();
+        return UserLoginResponse.builder()
+                .username(loginRequest.getUsername())
+                .roles(roles)
+                .accessToken(jwtToken)
+                .refreshToken(refreshToken)
+                .expiresIn(formatExpirationTime(expiredTime))
+                .build();
+    }
+
+    private String formatExpirationTime(long expiredTime) {
+        return expiredTime < 60000
+                ? TimeUnit.MILLISECONDS.toSeconds(expiredTime) + " seconds"
+                : TimeUnit.MILLISECONDS.toMinutes(expiredTime) + " minutes";
+    }
+
+    /**
+     * Update user's password function
+     */
+    public String updateUserPassword(UpdateUserPasswordRequest request, long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("can not find the user"));
+        validateOldPassword(request.getOldPassword(), user.getPassword());
+        validateNewPasswords(request.getNewPassword(), request.getConfirmPassword());
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return "Password was changed successfully";
+    }
+
+    private void validateOldPassword(String oldPassword, String currentPassword) {
+        if (!passwordEncoder.matches(oldPassword, currentPassword)) {
+            throw new CommonException("Old password is incorrect");
+        }
+    }
+
+    private void validateNewPasswords(String newPassword, String confirmPassword) {
+        if (!newPassword.equals(confirmPassword)) {
+            throw new CommonException("New password and confirmation do not match");
         }
     }
 
@@ -111,16 +159,6 @@ public class UserService implements UserDetailsService {
         return null;
     }
 
-    private UserLoginResponse getUserLoginResponse(UserLoginRequest loginRequest, String jwtToken, String refreshToken, List<String> roles) {
-        long expiredTime = jwtService.getExpirationTime();
-        return UserLoginResponse.builder()
-                .username(loginRequest.getUsername())
-                .roles(roles)
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .expiresIn(expiredTime < 60000 ? TimeUnit.MILLISECONDS.toSeconds(expiredTime) + "second" : TimeUnit.MILLISECONDS.toMinutes(expiredTime) + "minutes")
-                .build();
-    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -129,18 +167,5 @@ public class UserService implements UserDetailsService {
             throw new UsernameNotFoundException(username);
         }
         return new MyUserPrincipal(user.get());
-    }
-
-    public String getUserFromToken(HttpServletRequest request) {
-        String token = null;
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if (cookie.getName().equals("accessToken")) {
-                    token = cookie.getValue();
-                }
-            }
-        }
-        String username = jwtService.extractUsername(token);
-        return "hello " + username;
     }
 }

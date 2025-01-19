@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -39,32 +38,27 @@ public class WebSecurityConfig {
     private LogoutHandler logoutHandler;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
-                .cors(cors -> cors.configurationSource(request -> corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/user/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/user/signup").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/user/refresh-token").permitAll()
-                        .requestMatchers("/user").hasAnyAuthority("ADMIN_ROLE", "USER_ROLE", "HR_ROLE")
-                        .requestMatchers("/admin/**").hasAuthority("ADMIN_ROLE")
-                        .requestMatchers("/hr/**").hasAnyAuthority("ADMIN_ROLE", "HR_ROLE")
-                        .anyRequest().authenticated()
-                )
-//                .exceptionHandling((exception)->
-//                        exception.authenticationEntryPoint(authEntryPoint))
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .logout(logout ->
-                        logout.logoutUrl("/auth/logout")
-                                .addLogoutHandler(logoutHandler)
-                                .logoutSuccessHandler((request, response, authentication) -> {
-                                            response.getWriter().write("Logout successful");
-                                            response.setStatus(HttpServletResponse.SC_OK);
-                                        }
-                                ))
-                .build();
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.cors(cors -> cors.configurationSource(request -> corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable);
+
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers("/user/login", "/user/signup", "/user/refresh-token", "/test").permitAll()
+                .anyRequest().authenticated()
+        );
+
+        http.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .logout(logout -> logout.logoutUrl("/auth/logout")
+                        .addLogoutHandler(logoutHandler)
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                                    response.getWriter().write("Logout successful");
+                                    response.setStatus(HttpServletResponse.SC_OK);
+                                }
+                        ));
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
     @Bean

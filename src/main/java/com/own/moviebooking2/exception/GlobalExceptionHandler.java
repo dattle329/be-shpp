@@ -12,5 +12,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
-
+    @ExceptionHandler({ArithmeticException.class})
+    public ResponseEntity<String> exceptionHandler(ArithmeticException e) {
+        return new ResponseEntity<>(e.getMessage() + "/" + "can not do that", HttpStatus.BAD_REQUEST);
+    }
 }
